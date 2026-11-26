@@ -44,10 +44,41 @@ resource "aws_lightsail_container_service_deployment_version" "catalog_deploymen
     container_name = "catalog-service"
     image          = "${var.REPOSITORY_URI}:latest"
 
+    environment = {
+      REDIS_HOST = "localhost"
+      REDIS_PORT = "6379"
+    }
+
     ports = {
       8001 = "HTTP"
     }
   }
+
+  container {
+    container_name = "redis"
+    image          = "redis:7-alpine"
+
+    ports = {
+      6379 = "TCP"
+    }
+  }
+
+  public_endpoint {
+    container_name = "catalog-service"
+    container_port = 8001
+
+    health_check {
+      healthy_threshold   = 2
+      unhealthy_threshold = 2
+      timeout_seconds     = 2
+      interval_seconds    = 5
+      path                = "/health"
+      success_codes       = "200-499"
+    }
+  }
+
+  service_name = aws_lightsail_container_service.catalog_service.name
+}
 
   public_endpoint {
     container_name = "catalog-service"

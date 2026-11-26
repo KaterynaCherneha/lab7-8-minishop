@@ -1,0 +1,38 @@
+name: "Custom Python CI Action"
+description: "Встановлює Python, залежності, запускає лінтер flake8 та юніт-тести"
+
+inputs:
+  python-version:
+    description: "Версія Python для встановлення"
+    required: false
+    default: "3.12"
+  test-file:
+    description: "Шлях до файлу з тестами"
+    required: false
+    default: "test.py"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install dependencies
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 pytest
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+    - name: Lint with flake8
+      shell: bash
+      run: |
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+    - name: Run unit tests
+      shell: bash
+      run: |
+        python3 -m unittest ${{ inputs.test-file }}

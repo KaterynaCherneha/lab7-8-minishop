@@ -1,10 +1,20 @@
 import os
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+import redis
 
 app = FastAPI(
     title="MiniShop Catalog Service",
     version="1.0.0"
+)
+
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
+
+redis_client = redis.Redis(
+    host=REDIS_HOST,
+    port=REDIS_PORT,
+    decode_responses=True
 )
 
 
@@ -44,9 +54,18 @@ def root():
 
 @app.get("/health")
 def health():
+    try:
+        redis_status = "connected" if redis_client.ping() else "disconnected"
+        visits = redis_client.incr("health_visits")
+    except Exception:
+        redis_status = "unavailable"
+        visits = 0
+
     return {
         "status": "healthy",
-        "service": "catalog"
+        "service": "catalog",
+        "redis": redis_status,
+        "visits": visits
     }
 
 
