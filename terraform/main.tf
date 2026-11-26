@@ -39,6 +39,28 @@ resource "aws_lightsail_container_service" "catalog_service" {
   }
 }
 
+resource "aws_ecr_repository_policy" "allow_lightsail" {
+  repository = split("/", var.REPOSITORY_URI)[1]
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowLightsailPull"
+        Effect = "Allow"
+        Principal = {
+          AWS = aws_lightsail_container_service.catalog_service.private_registry_access[0].ecr_image_puller_role[0].principal_arn
+        }
+        Action = [
+          "ecr:BatchGetImage",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchCheckLayerAvailability"
+        ]
+      }
+    ]
+  })
+}
+
 resource "aws_lightsail_container_service_deployment_version" "catalog_deployment" {
   container {
     container_name = "catalog-service"
@@ -78,6 +100,7 @@ resource "aws_lightsail_container_service_deployment_version" "catalog_deploymen
   }
 
   service_name = aws_lightsail_container_service.catalog_service.name
+  depends_on   = [aws_ecr_repository_policy.allow_lightsail]
 }
 
 output "lightsail_url" {
