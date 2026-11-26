@@ -7,10 +7,10 @@ terraform {
     }
   }
   backend "s3" {
-    bucket         = "lab-tf-state-cherneha"
-    key            = "terraform.tfstate"
-    region         = "eu-central-1"
-    dynamodb_table = "lab-my-tf-lockid"
+    bucket       = "lab-tf-state-cherneha"
+    key          = "terraform.tfstate"
+    region       = "eu-central-1"
+    use_lockfile = true
   }
 }
 
@@ -62,23 +62,6 @@ resource "aws_lightsail_container_service_deployment_version" "catalog_deploymen
       6379 = "TCP"
     }
   }
-
-  public_endpoint {
-    container_name = "catalog-service"
-    container_port = 8001
-
-    health_check {
-      healthy_threshold   = 2
-      unhealthy_threshold = 2
-      timeout_seconds     = 2
-      interval_seconds    = 5
-      path                = "/health"
-      success_codes       = "200-499"
-    }
-  }
-
-  service_name = aws_lightsail_container_service.catalog_service.name
-}
 
   public_endpoint {
     container_name = "catalog-service"
